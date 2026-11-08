@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>argosbx-ui</title>
+<link rel="stylesheet" href="/public/style.css?v=20261108-v20">
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><h1>argosbx-ui</h1><span id="ver"></span><button id="logout" hidden>退出</button></div></header>
+<div id="login" class="card login-card" hidden>
+  <h2>管理员登录</h2>
+  <input id="pw" type="password" placeholder="管理员密码" autocomplete="current-password">
+  <button id="loginBtn" class="primary">登录</button>
+  <p id="loginErr" class="err"></p>
+</div>
+<main id="app" hidden>
+<nav id="tabs" class="tabbar">
+  <button data-tab="server" class="on">服务器</button>
+  <button data-tab="proto">协议</button>
+  <button data-tab="tunnel">隧道</button>
+  <button data-tab="cert">证书</button>
+  <button data-tab="sub">订阅</button>
+  <button data-tab="ops">操作</button>
+</nav>
+
+<section id="tab-server" class="tab on">
+  <h2>服务器 · JP</h2>
+  <div id="statusCards" class="status-cards"></div>
+  <div class="card">
+    <div id="serverInfo">加载中…</div>
+  </div>
+  <div class="row">
+    <button id="importBtn">从 JP 现状导入变量到数据库</button>
+  </div>
+  <div id="importResult"></div>
+  <p class="hint">导入先比对数据库与 JP 现状：空字段直接补；已有值和现状不一致的列出来，你确认后才覆盖。UUID、隧道 token 只显示打码形式。</p>
+  <h3>节点（<span id="nodeCount">0</span> 条）</h3>
+  <ul id="nodeList" class="node-list"></ul>
+</section>
+
+<section id="tab-proto" class="tab">
+  <h2>协议</h2>
+  <p class="hint">打头：AnyTLS / Tuic / Hysteria2。端口留空 = 沿用 JP 现有端口，不随机改。拉杆关掉 = rep 时不启用该协议。</p>
+  <div id="protoForm"></div>
+  <h3>其他</h3>
+  <div class="card form-card">
+    <label>节点名前缀 <input id="f-name" placeholder="Fam"></label>
+    <label>Reality 域名 <input id="f-reym" placeholder="apple.com"></label>
+    <label>CDN 优选 IP（两个，空格分隔） <input id="f-cfip" placeholder="留空默认"></label>
+    <label>WARP 出站 <input id="f-warp" placeholder="留空默认直连"></label>
+    <label>IP 偏好 <select id="f-ippz"><option value="">自动</option><option value="4">仅 IPv4</option><option value="6">仅 IPv6</option></select></label>
+    <label>Hy2 跳转端口（空格分隔） <input id="f-hyjpt" placeholder="留空不做"></label>
+    <div class="proto-row"><label class="switch-wrap"><input type="checkbox" id="f-oap"><span class="slider"></span></label><label class="proto-name" for="f-oap">开放所有端口</label>
+    <span class="proto-state" id="st-oap">未启用</span><span class="hint oap-hint">开着：rep 时放行全部端口；关着：不动防火墙。</span></div>
+  </div>
+  <div class="row"><button id="saveBtn" class="primary">保存并预览改动（不立即生效）</button></div>
+</section>
+
+<section id="tab-tunnel" class="tab">
+  <h2>隧道</h2>
+  <div class="card form-card">
+    <label>Argo 主协议 <select id="f-argo"><option value="">关闭隧道</option><option value="vmpt">vmpt · VMess-ws</option><option value="vwpt">vwpt · VLESS-ws-enc</option><option value="vxpt">vxpt · VLESS-xhttp-enc（仅 beta）</option></select></label>
+    <p id="argoHint" class="hint ok" hidden></p>
+    <label>固定隧道域名 <input id="f-agn" placeholder="argo-jp.hooleeas.com"></label>
+    <label>固定隧道 Token <input id="f-agk" type="password" placeholder="已保存则留空显示为打码，改动才重填" autocomplete="off"></label>
+    <label>传输模式 <select id="f-agqc"><option value="">TCP（http2，默认）</option><option value="y">UDP（quic）</option></select></label>
+    <p class="hint">域名和 token 必须同时填才是固定隧道，只填一个会变临时隧道。token 在界面上永远打码显示。</p>
+  </div>
+  <div class="row"><button id="saveBtn2" class="primary">保存并预览改动（不立即生效）</button></div>
+</section>
+
+<section id="tab-cert" class="tab">
+  <h2>证书</h2>
+  <div id="certBanner"></div>
+  <div class="card"><div id="certInfo">加载中…</div></div>
+  <div class="card form-card">
+    <div class="cert-choice" id="certChoice">
+      <label class="cert-option" data-cert="builtin"><input type="radio" name="certChoice" value="builtin"><span class="cert-opt-text"><span class="t">内置证书（自签）</span><span class="d">ArgoSBX 内置自签证书，签发者 CN=www.bing.com，有效期 100 年，路径 /root/agsbx/cert.crt，不用办证。</span></span><span class="picked" hidden>✓ 已选</span></label>
+      <label class="cert-option" data-cert="own"><input type="radio" name="certChoice" value="own"><span class="cert-opt-text"><span class="t">域名证书（acme-yg）</span><span class="d">用 acme-yg 办的域名证书，Let's Encrypt 颁发，存在 /root/ygkkkca/，多个脚本共用。</span></span><span class="picked" hidden>✓ 已选</span></label>
+    </div>
+    <p class="hint">acme-yg 三种方式：① 80 端口 IP 证书（只有 3 天，会强制释放 80 端口）② 80 端口域名证书（仅单域名）③ DNS API（单/泛域名，不占 80 端口）。alns 已开但无证书时 rep 会挂在交互等待上。</p>
+  </div>
+  <div class="card">
+    <h3>证书列表（acme-yg 查询）</h3>
+    <div id="certList">加载中…</div>
+    <div class="row"><button id="certListRefreshBtn">刷新列表</button></div>
+    <p class="hint">只读查询，来源是 JP 上 ~/.acme.sh 的实际记录。acme-yg 本版没有“删除指定证书”功能（上游代码已注释），删除只能是下面“删除全部证书并卸载 acme.sh”。</p>
+  </div>
+  <div class="card form-card">
+    <h3>申请新证书</h3>
+    <label>申请方式 <select id="applyMode">
+      <option value="ip">80 端口 IP 证书（无需域名，只有 3 天）</option>
+      <option value="domain">80 端口域名证书（仅单域名）</option>
+      <option value="dns">DNS API 域名证书（单 / 泛域名，不占 80 端口）</option>
+    </select></label>
+    <div id="applyFields"></div>
+    <p id="applyWarn" class="hint warn"></p>
+    <div class="row"><button id="applyBtn" class="primary">申请新证书</button></div>
+    <div id="applyJob" hidden><p id="applyStatus"></p><pre id="applyLog" class="log"></pre></div>
+  </div>
+  <div class="card danger-card">
+    <h3>删除证书</h3>
+    <p class="hint">删除全部证书并卸载 acme.sh：删掉 /root/ygkkkca、~/.acme.sh，清除自动续期 cron。删完没有证书可用，证书选择会自动切回「内置证书（自签）」，须重新 rep 才生效。正在用域名证书（alns 已开）时，删完会回落到内置自签。</p>
+    <div class="row"><button id="certDeleteBtn" class="danger">删除证书并卸载 acme.sh</button></div>
+    <div id="certDeleteStatus"></div>
+  </div>
+  <div class="row">
+    <button id="saveBtn3" class="primary">保存并预览改动（不立即生效）</button>
+    <button id="renewBtn">手动续期全部证书</button>
+  </div>
+  <p class="hint">续期后代理进程是否重载新证书未确认。</p>
+</section>
+
+<section id="tab-sub" class="tab">
+  <h2>订阅</h2>
+  <div class="card form-card">
+    <label class="check-line"><input type="checkbox" id="f-sub"> 启用本地订阅服务（sub）</label>
+    <label>订阅 Token <input id="f-subid" placeholder="留空 = UUID"></label>
+    <label>订阅端口 <input id="f-subpt" placeholder="留空沿用旧端口"></label>
+  </div>
+  <div class="card"><div id="subInfo">加载中…</div></div>
+  <div class="row"><button id="saveBtn4" class="primary">保存并预览改动（不立即生效）</button></div>
+</section>
+
+<section id="tab-ops" class="tab">
+  <h2>操作</h2>
+  <div class="row btn-grid">
+    <button id="listBtn" title="list（只读）">刷新节点</button>
+    <button id="upxBtn" title="upx">更新 Xray 内核</button>
+    <button id="upsBtn" title="ups">更新 sing-box 内核</button>
+    <button id="upaBtn" title="upa（仅 beta）">更新 cloudflared</button>
+    <button id="resBtn" title="res">重启全部服务</button>
+  </div>
+  <p class="hint">upx/ups/upa/res 会杀进程、服务短暂中断，点后需二次确认。删除（del）不在 v1 里：del 会删整个 /root/agsbx 与 /root/websbx，太危险。</p>
+  <h3>改动确认</h3>
+  <div id="diffBox" class="card">还没有待确认的改动。先在协议/隧道/证书/订阅页点「保存并预览改动」。</div>
+  <div class="row"><button id="repBtn" class="primary danger" disabled>确认并执行 rep（生效）</button></div>
+  <h3>执行日志</h3>
+  <pre id="logBox" class="log"></pre>
+  <h3>审计记录</h3>
+  <ul id="auditList" class="audit-list"></ul>
+</section>
+</main>
+<script type="module" src="/public/app.js?v=20261108-v20"></script>
+<div id="toast" role="status" aria-live="polite"></div>
+</body>
+</html>

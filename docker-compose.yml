@@ -1,0 +1,25 @@
+# argosbx-ui — Docker Compose 部署
+# 一键部署：./compose.sh（首次运行自动生成管理员密码）
+# 之后日常启停：docker compose up -d / docker compose down
+# 与 ./run.sh（docker run 方式）等价，共用同一份 .env 与 ./data，任选其一即可。
+
+services:
+  argosbx-ui:
+    build: .
+    image: argosbx-web:0.1.0
+    container_name: argosbx-web
+    restart: unless-stopped
+    privileged: true
+    pid: host
+    ports:
+      - "3100:3100"
+    env_file:
+      - .env
+    environment:
+      - DATA_DIR=/data
+    volumes:
+      - ./data:/data
+      - /root/agsbx:/root/agsbx
+      - /root/ygkkkca:/root/ygkkkca:ro
+      - /root/websbx:/root/websbx:ro
+      - /root/bin:/root/bin:ro

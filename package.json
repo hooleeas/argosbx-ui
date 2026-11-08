@@ -1,0 +1,1 @@
+{"dependencies":{"hono":"^4.9.0"},"description":"ArgoSBX with web UI - calls upstream argosbx beta script via rep, variables persisted in SQLite","name":"argosbx-ui","scripts":{"start":"bun run src/server.ts"},"type":"module","version":"0.1.0"}

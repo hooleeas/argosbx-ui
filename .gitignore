@@ -1,0 +1,8 @@
+# secrets / runtime data — never commit
+.env
+*.db
+*.db-journal
+data/
+node_modules/
+bun.lockb
+.DS_Store

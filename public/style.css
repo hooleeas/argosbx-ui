@@ -1,0 +1,195 @@
+/* argosbx-ui — 表现层重做 v5：向 subconverter-ui 的定版样式看齐。
+   只改外观：毛玻璃胶囊按钮 38px/15px、扁平输入框、卡片分区、深浅色自适应。
+   绝不改功能选择器：.proto-row .switch-wrap 只作用于协议行拉杆，绝不用
+   全局 input[type=checkbox] 覆盖，否则会盖住别的复选框导致点不动。 */
+:root{color-scheme:light dark}
+*{box-sizing:border-box}
+html{touch-action:manipulation;-webkit-tap-highlight-color:transparent}
+body{margin:0 auto;max-width:860px;padding:0 15px 40px;color:#111;background:#f6f6f6;font:13px/1.5 system-ui,-apple-system,Arial,sans-serif;-webkit-text-size-adjust:100%;text-size-adjust:100%}
+button,a,input,select,textarea,.switch-wrap{touch-action:manipulation}
+:focus{outline:none}
+h1{font-size:24px;margin:0}
+h2{font-size:20px;margin:0 0 12px}
+h3{font-size:16px;margin:20px 0 8px}
+p{margin:8px 0}
+
+/* 顶栏：粘顶，标题 + 版本 + 退出 */
+.topbar{position:sticky;top:0;z-index:100;margin:0 -15px;padding:10px 15px;background:rgba(246,246,246,.85);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%)}
+.topbar-inner{display:flex;align-items:center;gap:10px;max-width:860px;margin:0 auto}
+.topbar-inner #ver{color:#666;font-size:13px}
+.topbar-inner #logout{margin-left:auto}
+
+/* 登录卡片 */
+.login-card{max-width:360px;margin:48px auto;padding:24px}
+.login-card h2{margin-top:0}
+.login-card input{margin-bottom:12px}
+
+/* 导航：粘顶胶囊，一行，手机可横滑 */
+.tabbar{position:sticky;top:54px;z-index:99;display:flex;gap:4px;margin:12px 0 4px;padding:4px;border:1px solid rgba(23,25,28,.14);border-radius:999px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(23,25,28,.09),0 10px 32px rgba(0,0,0,.12);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%);overflow-x:auto;scrollbar-width:none}
+.tabbar::-webkit-scrollbar{display:none}
+.tabbar button{flex:1 0 auto;min-width:0;margin:0;border-color:transparent;background:transparent;box-shadow:none;color:#17191c}
+.tabbar button.on{background:linear-gradient(145deg,rgba(23,25,28,.11),rgba(23,25,28,.04));border-color:rgba(23,25,28,.12);box-shadow:inset 0 1px rgba(23,25,28,.16),0 3px 10px rgba(0,0,0,.09)}
+.tab{display:none;padding-top:8px}
+.tab.on{display:block}
+
+/* 卡片 */
+.card{margin:12px 0;padding:14px 16px;border:1px solid rgba(0,0,0,.12);border-radius:12px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.card p:first-child{margin-top:0}
+.card p:last-child{margin-bottom:0}
+.form-card label{display:block;margin:12px 0;font-weight:700}
+.form-card label:first-child{margin-top:0}
+.form-card label:last-child{margin-bottom:0}
+.check-line{display:flex;align-items:center;gap:8px;font-weight:700}
+.check-line input[type=checkbox]{width:auto;margin:0;flex:none;-webkit-appearance:checkbox;appearance:checkbox}
+
+/* 状态卡片：2x2 网格，四张一样宽；隧道/证书域名一行不换行。 */
+.status-cards{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin:4px 0 12px}
+.status-card{padding:12px 14px;border:1px solid rgba(0,0,0,.12);border-radius:12px;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.05);min-width:0;grid-column:span 1}
+.status-card.wide .v{white-space:nowrap;overflow-x:auto;scrollbar-width:none;font-size:15px}
+.status-card.wide .v::-webkit-scrollbar{display:none}
+.status-card .k{font-size:12px;color:#666;margin-bottom:4px}
+.status-card .v{font-size:16px;font-weight:700;overflow-wrap:anywhere}
+.status-card .s{font-size:12px;color:#666;margin-top:2px;overflow-wrap:anywhere}
+.status-card .v.ok{color:#2e7d32}
+.status-card .v.bad{color:#c62828}
+/* 证书卡片域名一行不换行（超长横向滚动），域名绿色 */
+.status-card.cert .s{white-space:nowrap;overflow-x:auto;scrollbar-width:none}
+.status-card.cert .s::-webkit-scrollbar{display:none}
+.status-card .cert-domain{white-space:nowrap;color:#2e7d32;font-weight:700}
+
+/* 按钮：毛玻璃胶囊，38px 高、15px 字，点按缩 0.95 */
+button{box-sizing:border-box;min-height:38px;height:38px;padding:8px 16px;font-size:15px;font-weight:700;border:1px solid rgba(0,0,0,.18);border-radius:999px;background:rgba(255,255,255,.72);color:inherit;cursor:pointer;backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%);box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 4px 14px rgba(0,0,0,.12);transition:background-color .2s ease,border-color .2s ease,box-shadow .2s ease,transform .08s ease,backdrop-filter .2s ease,-webkit-backdrop-filter .2s ease;user-select:none;-webkit-user-select:none}
+button:disabled{opacity:.45;cursor:not-allowed}
+button.primary{background:#2e7d32;border-color:rgba(46,125,50,.4);color:#fff}
+button.danger{background:#c62828;border-color:rgba(198,40,40,.4);color:#fff}
+button.danger:disabled{background:rgba(255,255,255,.72);color:inherit;border-color:rgba(0,0,0,.18)}
+button:active{transform:scale(.95)}
+@media (hover:hover){button:hover{background:rgba(255,255,255,.95);border-color:rgba(255,255,255,.9);backdrop-filter:blur(18px) saturate(200%);-webkit-backdrop-filter:blur(18px) saturate(200%);box-shadow:inset 0 1px 0 rgba(255,255,255,.85),inset 0 0 0 1px rgba(255,255,255,.35),0 10px 28px rgba(0,0,0,.22)}button.primary:hover{background:#388e3c}button.danger:hover{background:#d32f2f}}
+.row{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}
+.row button{margin:0;white-space:nowrap}
+.btn-grid button{flex:1 1 160px;white-space:nowrap}
+
+/* 证书状态横条：证书页顶部一眼看清在用谁 */
+.cert-banner{padding:14px 16px;border:1px solid rgba(0,0,0,.12);border-radius:12px;margin:12px 0;background:#fff;box-shadow:0 2px 10px rgba(0,0,0,.05)}
+.cert-banner .big{font-size:17px;font-weight:700}
+.cert-banner .sub{font-size:13px;color:#666;margin-top:4px;overflow-wrap:anywhere;overflow-x:auto}
+.cert-banner .sub.warn{color:#b26a00;font-weight:700}
+/* 横条里的域名：不换行、绿色，超长时整行横向滚动而不是把域名折断 */
+.cert-banner .cert-domain{white-space:nowrap;color:#2e7d32;font-weight:700}
+.cert-banner.own{border-color:rgba(46,125,50,.5);background:rgba(46,125,50,.08)}
+.cert-banner.own .big{color:#2e7d32}
+.cert-banner.warn{border-color:rgba(198,40,40,.5);background:rgba(198,40,40,.08)}
+.cert-banner.warn .big{color:#c62828}
+
+/* 证书二选一：内置（自签）vs 我自己的真实证书，选中的一眼看得出 */
+.cert-choice{display:grid;gap:8px;margin:4px 0}
+.cert-option{display:flex;gap:10px;align-items:flex-start;padding:12px 14px;border:1px solid #aaa;border-radius:10px;cursor:pointer}
+.cert-option input[type=radio]{width:auto;margin:2px 0 0;flex:none;-webkit-appearance:radio;appearance:radio}
+.cert-opt-text{display:flex;flex-direction:column;gap:2px;min-width:0;flex:1}
+.cert-option .t{font-weight:700;font-size:14px}
+.cert-option .d{font-size:12px;color:#666}
+.cert-option .picked{flex:none;font-size:12px;font-weight:700;color:#2e7d32;white-space:nowrap}
+.cert-option.on{border-color:#2e7d32;border-width:2px;background:rgba(46,125,50,.08)}
+
+/* 输入框/下拉框：扁平实线边框，统一样式与高度，深色下不黑白分层 */
+input,select{box-sizing:border-box;width:100%;margin:4px 0;padding:6px;font:inherit;font-size:13px;border:1px solid #aaa;border-radius:6px;background:#fff;color:inherit;box-shadow:none}
+input,textarea{-webkit-appearance:none;appearance:none}
+select{height:calc(1.5em + 14px)}
+input::placeholder{color:#999}
+label{display:block;margin:10px 0}
+
+/* 协议行：拉杆 + 名字 + 状态文字 + 端口 */
+.proto-group{font-size:16px;font-weight:700;margin:18px 0 6px;padding-bottom:6px;border-bottom:1px solid #ddd}
+.proto-row{display:flex;gap:10px;align-items:center;margin:0;padding:9px 0;border-bottom:1px solid #eee}
+.proto-row:last-child{border-bottom:none}
+.proto-row .proto-name{margin:0;min-width:0;flex:1 1 auto;cursor:pointer;font-size:14px}
+.proto-row .proto-port-label{display:inline-block;margin:0;flex:none;font-size:13px;color:#666;white-space:nowrap;cursor:pointer}
+.proto-row input[type=text]{flex:0 0 190px;max-width:190px;margin:0;text-align:right}
+.proto-state{flex:0 0 52px;font-size:12px;color:#888;text-align:right}
+.proto-state.on{color:#2e7d32;font-weight:700}
+/* 开放所有端口（oap）行里的小字说明：跟在开关文字后面，手机上换到第二行 */
+.proto-row .oap-hint{flex:0 1 auto;min-width:0;margin:0;font-size:12px}
+.proto-row .switch-wrap{position:relative;display:inline-block;width:42px;height:24px;flex:none;margin:0;padding:0;cursor:pointer;min-width:0}
+.proto-row .switch-wrap input[type=checkbox]{position:absolute;inset:0;width:100%;height:100%;margin:0;padding:0;opacity:0;cursor:pointer}
+.proto-row .switch-wrap .slider{position:absolute;inset:0;background:#bbb;border-radius:999px;transition:background .2s;pointer-events:none}
+.proto-row .switch-wrap .slider::before{content:"";position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:50%;transition:transform .2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.proto-row .switch-wrap input[type=checkbox]:checked + .slider{background:#2e7d32}
+.proto-row .switch-wrap input[type=checkbox]:checked + .slider::before{transform:translateX(18px)}
+
+/* 节点 / 审计 / 日志 */
+.node-list{list-style:none;padding:0;margin:0}
+.node-list li{margin:6px 0;padding:8px 12px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:#fff;overflow-wrap:anywhere}
+.node-list small{color:#666}
+.audit-list{list-style:none;padding:0;margin:0}
+.audit-list li{margin:6px 0;padding:8px 12px;border:1px solid rgba(0,0,0,.12);border-radius:8px;background:#fff;overflow-wrap:anywhere}
+.log{background:#111;color:#ddd;padding:12px;border-radius:8px;overflow:auto;max-height:300px;white-space:pre-wrap;word-break:break-all;font-size:12px}
+#serverInfo pre{background:#111;color:#ddd;padding:10px;border-radius:8px;overflow:auto;max-height:220px;white-space:pre-wrap;word-break:break-all;font-size:12px}
+#serverInfo p{margin:6px 0;overflow-wrap:anywhere}
+#certInfo p,#subInfo p{margin:6px 0;overflow-wrap:anywhere}
+.hint{color:#666;font-size:13px}
+.hint.ok{color:#2e7d32;font-weight:700}
+.hint.warn{color:#b26a00}
+.danger-card{border-color:rgba(198,40,40,.4)}
+.cert-table{width:100%;border-collapse:collapse;font-size:13px}
+.cert-table th,.cert-table td{text-align:left;padding:6px 8px;border-bottom:1px solid rgba(0,0,0,.1);overflow-wrap:anywhere}
+.cert-table th{color:#666;font-weight:700}
+.err{color:#c62828}
+#diffBox p{margin:6px 0;overflow-wrap:anywhere}
+
+@media (max-width:600px){
+  input,select{font-size:16px}
+  .status-cards{grid-template-columns:1fr}
+  .proto-row{flex-wrap:wrap}
+  .proto-row .proto-name{flex:1 1 100%;order:-1;margin-bottom:2px}
+  .proto-row input[type=text]{flex:1 1 160px;min-width:160px;max-width:none;text-align:left}
+  .tabbar{top:52px}
+}
+@media (prefers-color-scheme:dark){
+  body{background:#121212;color:#e0e0e0}
+  .topbar{background:rgba(18,18,18,.85)}
+  .topbar-inner #ver{color:#999}
+  .card,.status-card,.node-list li,.audit-list li{background:#1e1e1e;border-color:#333;box-shadow:0 2px 10px rgba(0,0,0,.3)}
+  .tabbar{background:rgba(8,8,8,.6);border-color:rgba(245,245,245,.14)}
+  .tabbar button{color:#f5f5f5}
+  .tabbar button.on{background:linear-gradient(145deg,rgba(245,245,245,.11),rgba(245,245,245,.04));border-color:rgba(245,245,245,.12)}
+  button{background:rgba(255,255,255,.1);color:#e0e0e0;border-color:rgba(255,255,255,.2);box-shadow:inset 0 1px 0 rgba(255,255,255,.12),0 4px 14px rgba(0,0,0,.3)}
+  button.primary{background:#2e7d32;border-color:rgba(67,160,71,.5);color:#fff}
+  button.danger{background:#c62828;border-color:rgba(229,57,53,.5);color:#fff}
+  button.danger:disabled{background:rgba(255,255,255,.1);color:#e0e0e0;border-color:rgba(255,255,255,.2)}
+  input,select{background:#2a2a2a;color:#e0e0e0;border-color:#555}
+  input::placeholder{color:#999}
+  .hint{color:#999}
+  .hint.ok{color:#66bb6a}
+  .proto-group{border-bottom-color:#333}
+  .proto-row{border-bottom-color:#2a2a2a}
+  .proto-state{color:#888}
+  .proto-state.on{color:#66bb6a}
+  .proto-row .switch-wrap .slider{background:#555}
+  .proto-row .switch-wrap input[type=checkbox]:checked + .slider{background:#43a047}
+  .status-card .k,.status-card .s{color:#999}
+  .status-card .v.ok{color:#66bb6a}
+  .status-card .v.bad{color:#ef5350}
+  .cert-banner{background:#1e1e1e;border-color:#333}
+  .cert-banner .sub{color:#999}
+  .cert-banner .sub.warn{color:#e6a817}
+  .cert-banner.own{border-color:rgba(102,187,106,.5);background:rgba(67,160,71,.12)}
+  .cert-banner.own .big{color:#66bb6a}
+  .cert-banner .cert-domain{color:#66bb6a}
+  .status-card .cert-domain{color:#66bb6a}
+  .cert-banner.warn{border-color:rgba(239,83,80,.5);background:rgba(229,57,53,.12)}
+  .cert-banner.warn .big{color:#ef5350}
+  .cert-option .d{color:#999}
+  .cert-option .picked{color:#66bb6a}
+  .cert-option.on{border-color:#43a047;background:rgba(67,160,71,.12)}
+  .node-list small{color:#999}
+  .log,#serverInfo pre{background:#000}
+  @media (hover:hover){button:hover{background:rgba(255,255,255,.24);border-color:rgba(255,255,255,.55);box-shadow:inset 0 1px 0 rgba(255,255,255,.35),inset 0 0 0 1px rgba(255,255,255,.18),0 10px 28px rgba(0,0,0,.45)}button.primary:hover{background:#388e3c}button.danger:hover{background:#d32f2f}}
+}
+/* 无需确认的提示：底部毛玻璃胶囊，几秒后自己消失，不用点确定。 */
+#toast{position:fixed;left:50%;bottom:24px;transform:translate(-50%,16px);z-index:200;max-width:min(92vw,560px);padding:10px 18px;border:1px solid rgba(0,0,0,.18);border-radius:999px;background:rgba(255,255,255,.85);color:#111;font-size:14px;font-weight:700;text-align:center;box-shadow:inset 0 1px 0 rgba(255,255,255,.42),0 10px 28px rgba(0,0,0,.22);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%);opacity:0;pointer-events:none;transition:opacity .25s ease,transform .25s ease}
+#toast.show{opacity:1;transform:translate(-50%,0)}
+#toast.err{border-color:rgba(198,40,40,.5);color:#c62828}
+@media (prefers-color-scheme:dark){
+  #toast{background:rgba(30,30,30,.85);color:#e0e0e0;border-color:rgba(255,255,255,.2)}
+  #toast.err{border-color:rgba(239,83,80,.5);color:#ef5350}
+}
