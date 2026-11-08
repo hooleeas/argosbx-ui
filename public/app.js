@@ -347,6 +347,68 @@ async function op(action, needConfirm) {
     await loadAll();
   } catch (e) { $("logBox").textContent = action + " 失败：" + e.message; }
 }
+// ---- 自定义弹窗（站内弹窗，不用浏览器原生 confirm）----
+let modalOkHandler = null;
+function openModal(title, bodyHtml, okLabel, okDanger) {
+  $("modalTitle").textContent = title;
+  $("modalBody").innerHTML = bodyHtml;
+  const ok = $("modalOk");
+  ok.textContent = okLabel;
+  ok.className = okDanger ? "danger" : "primary";
+  ok.disabled = false;
+  $("modalOverlay").hidden = false;
+}
+function closeModal() { $("modalOverlay").hidden = true; modalOkHandler = null; }
+$("modalCancel").onclick = closeModal;
+$("modalOk").onclick = () => { if (modalOkHandler) modalOkHandler(); };
+$("modalOverlay").addEventListener("click", (e) => { if (e.target === $("modalOverlay")) closeModal(); });
+// ---- 卸载 ArgoSBX：弹窗双重确认 ----
+// 第一步：列清删什么、备份什么；第二步：输入「卸载」二字才放行红色确认按钮。
+// 备份清单由服务端预检返回（实际存在才写“会备份”，不存在的写“不存在，跳过”）。
+const UNINSTALL_DELETES = ["全部节点与订阅链接（/root/agsbx/jhsub.txt 等）", "全部协议配置（/root/agsbx/xr.json、sb.json）", "订阅生成目录 /root/websbx", "启动脚本 /root/bin/agsbx 与安装标记 sbx_update", "xr / sb / argo 三个服务与相关定时任务"];
+async function startUninstall() {
+  try {
+    const pre = await api("/api/uninstall/confirm", { method: "POST", body: "{}" });
+    if (!pre.installed) { showToast("ArgoSBX 未安装，无需卸载。", true); return; }
+    const backupList = pre.backupItems.map((b) => `<li>${b.path}（${b.label}）${b.exists ? "——会备份" : "——不存在，跳过"}</li>`).join("");
+    openModal("卸载 ArgoSBX",
+      `<p>这会删掉：</p><ul>${UNINSTALL_DELETES.map((d) => `<li>${d}</li>`).join("")}</ul>
+       <p>卸载前先自动备份快照到宿主 <code>${pre.backupPrefix}&lt;时间戳&gt;/</code>，备份清单：</p><ul>${backupList}</ul>
+       <p class="hint">备份失败不执行卸载。Web 界面、数据库里的变量组、Cloudflare 侧固定隧道定义不动；重装时在操作页用保存的变量组执行一次 rep 即可。</p>`,
+      "下一步：确认卸载", false);
+    modalOkHandler = () => step2Uninstall(pre);
+  } catch (e) { showToast("卸载预检失败：" + e.message, true); }
+}
+function step2Uninstall(pre) {
+  openModal("最后确认",
+    `<p class="err"><strong>真的卸载？删完节点全部失效，订阅链接打不开，只能靠备份或重新 rep 恢复。</strong></p>
+     <p>备份将存到宿主 <code>${pre.backupPrefix}&lt;时间戳&gt;/</code>。</p>
+     <label>输入「卸载」二字确认 <input id="uninstallType" placeholder="卸载" autocomplete="off"></label>`,
+    "确认卸载", true);
+  const input = $("uninstallType");
+  const ok = $("modalOk");
+  ok.disabled = true;
+  input.oninput = () => { ok.disabled = input.value.trim() !== "卸载"; };
+  input.focus();
+  modalOkHandler = () => doUninstall();
+}
+async function doUninstall() {
+  closeModal();
+  $("uninstallStatus").textContent = "正在备份并卸载，请稍等…";
+  $("logBox").textContent = "卸载执行中（先备份快照，再跑 del）…";
+  try {
+    const { confirmToken } = await api("/api/uninstall/confirm", { method: "POST", body: "{}" });
+    const j = await api("/api/uninstall", { method: "POST", body: JSON.stringify({ confirmToken }) });
+    $("uninstallStatus").textContent = j.ok ? `卸载完成，备份在 ${j.backupDir}` : "卸载未完全成功，见日志。";
+    $("logBox").textContent = `卸载${j.ok ? "完成" : "未完全成功"}（code=${j.code}，核验 ${j.verified ? "通过" : "未通过"}，备份 ${j.backupDir}）\n备份清单：\n${j.backupManifest || ""}\n${j.log}`;
+    showToast(j.ok ? "已卸载 ArgoSBX，变量组已保留，重装时执行一次 rep 即可。" : "卸载未完全成功，见执行日志。", !j.ok);
+    await loadAll();
+  } catch (e) {
+    $("uninstallStatus").textContent = "卸载失败：" + e.message;
+    $("logBox").textContent = "卸载失败：" + e.message;
+    showToast("卸载失败：" + e.message, true);
+  }
+}
 document.querySelectorAll("#tabs button").forEach((b) => b.onclick = () => {
   document.querySelectorAll("#tabs button").forEach((x) => x.classList.remove("on"));
   document.querySelectorAll(".tab").forEach((x) => x.classList.remove("on"));
@@ -397,6 +459,7 @@ $("upxBtn").onclick = () => op("upx", true);
 $("upsBtn").onclick = () => op("ups", true);
 $("upaBtn").onclick = () => op("upa", true);
 $("resBtn").onclick = () => op("res", true);
+$("uninstallBtn").onclick = startUninstall;
 $("renewBtn").onclick = async () => {
   if (!confirm("手动续期全部证书，确定？")) return;
   try {

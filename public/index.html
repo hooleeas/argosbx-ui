@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>argosbx-ui</title>
-<link rel="stylesheet" href="/public/style.css?v=20261108-v20">
+<link rel="stylesheet" href="/public/style.css?v=20261108-v21">
 </head>
 <body>
 <header class="topbar"><div class="topbar-inner"><h1>argosbx-ui</h1><span id="ver"></span><button id="logout" hidden>退出</button></div></header>
@@ -132,7 +132,14 @@
     <button id="upaBtn" title="upa（仅 beta）">更新 cloudflared</button>
     <button id="resBtn" title="res">重启全部服务</button>
   </div>
-  <p class="hint">upx/ups/upa/res 会杀进程、服务短暂中断，点后需二次确认。删除（del）不在 v1 里：del 会删整个 /root/agsbx 与 /root/websbx，太危险。</p>
+  <p class="hint">upx/ups/upa/res 会杀进程、服务短暂中断，点后需二次确认。卸载在下方危险区，双重确认（弹窗 + 输入「卸载」）后执行，执行前先备份快照。</p>
+  <div class="card danger-card">
+    <h3>卸载 ArgoSBX</h3>
+    <p class="hint">卸载会删掉全部节点、订阅、配置、服务与定时任务（/root/agsbx、/root/websbx、启动脚本、安装标记）。卸载前先自动备份快照到宿主 /tmp/backup-argosbx-uninstall-&lt;时间戳&gt;/（含配置目录、订阅目录、启动脚本、安装标记），备份失败不执行卸载。Web 界面、数据库变量组、Cloudflare 侧固定隧道定义不动。</p>
+    <p class="hint">重装：在操作页用保存的变量组执行一次 rep 即可（变量组已保留在数据库里）。</p>
+    <div class="row"><button id="uninstallBtn" class="danger">卸载 ArgoSBX</button></div>
+    <div id="uninstallStatus"></div>
+  </div>
   <h3>改动确认</h3>
   <div id="diffBox" class="card">还没有待确认的改动。先在协议/隧道/证书/订阅页点「保存并预览改动」。</div>
   <div class="row"><button id="repBtn" class="primary danger" disabled>确认并执行 rep（生效）</button></div>
@@ -142,7 +149,17 @@
   <ul id="auditList" class="audit-list"></ul>
 </section>
 </main>
-<script type="module" src="/public/app.js?v=20261108-v20"></script>
+<script type="module" src="/public/app.js?v=20261108-v21"></script>
 <div id="toast" role="status" aria-live="polite"></div>
+<div id="modalOverlay" class="modal-overlay" hidden>
+  <div class="modal card" role="dialog" aria-modal="true">
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody"></div>
+    <div class="row modal-actions">
+      <button id="modalCancel">取消</button>
+      <button id="modalOk" class="primary">下一步</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

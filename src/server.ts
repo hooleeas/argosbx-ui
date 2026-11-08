@@ -661,6 +661,117 @@ app.post("/api/ops/confirm", async (c) => {
   if (!["upx", "ups", "upa", "res"].includes(action)) return c.json({ ok: false, error: "未知操作" }, 400);
   return c.json({ ok: true, confirmToken: newConfirmToken(), warning: `${action} 会杀掉对应进程并重启/更新内核，服务会短暂中断。` });
 });
+// ---- uninstall (del)：双重确认，先备份快照，绝不动 Web 自身 ----
+// del 是毁灭性的：调 cleandel()（删 ~/.bashrc 里的 agsbx 行、清 crontab
+// 相关行、删 $HOME/bin/agsbx、停并删 xr/sb/argo 三个服务、清 NAT 规则），
+// 再删 sbx_update、$HOME/agsbx、$HOME/websbx 整个目录。
+// 执行前先把脚本与配置打快照备份到宿主 /tmp，备份失败就停手、不执行 del。
+// 备份包：/root/agsbx（配置+数据）、/root/websbx（订阅生成目录）、
+// /root/bin/agsbx（启动脚本，95KB，内含上游 main 分支地址与全部变量记录
+// 逻辑）、/root/sbx_update（安装标记，存在才备）。卸完即使上游不在了，
+// 也能靠备份把脚本找回来重装。
+// 数据库里的变量组不动——重装时用保存的变量组在操作页执行一次 rep 就能装回来。
+// 安全红线：只删 AGSBX_DIR / WEBSBX_DIR 两个常量路径；/root/argosbx-web
+// （Web 自身代码）与 DATA_DIR（数据库）绝不在删除范围，执行前再核对一次。
+const UNINSTALL_BACKUP_PREFIX = "/tmp/backup-argosbx-uninstall-";
+function uninstallSafetyCheck(): string | null {
+  for (const p of [AGSBX_DIR, WEBSBX_DIR]) {
+    const norm = path.resolve(p);
+    if (norm === "/" || norm === "/root" || norm === path.resolve(DATA_DIR) || norm.includes("argosbx-web") || norm.includes("argosbx-ui")) return `拒绝执行：删除路径异常（${p}）`;
+  }
+  return null;
+}
+async function probeUninstallPaths(): Promise<Record<string, boolean>> {
+  const paths = ["/root/agsbx", "/root/websbx", "/root/bin/agsbx", "/root/sbx_update"];
+  const r = await hostExec(["bash", "-c", 'for p in "$@"; do if [ -e "$p" ]; then echo "$p:1"; else echo "$p:0"; fi; done', "_", ...paths], {}, 15000);
+  const out: Record<string, boolean> = {};
+  for (const line of r.out.split("\n")) {
+    const m = line.trim().match(/^(\S+):([01])$/);
+    if (m) out[m[1]] = m[2] === "1";
+  }
+  for (const p of paths) if (out[p] === undefined) out[p] = false;
+  return out;
+}
+async function snapshotBeforeUninstall(): Promise<{ ok: boolean; dir: string; manifest: string; error?: string }> {
+  const ts = new Date().toISOString().replace(/[:.]/g, "-").replace("T", "-").slice(0, 19);
+  const dir = UNINSTALL_BACKUP_PREFIX + ts;
+  const script = `
+set -e
+dir="$1"
+mkdir -p "$dir"
+manifest="$dir/MANIFEST.txt"
+: > "$manifest"
+copy_one() {
+  src="$1"; dest="$2"
+  if [ -e "$src" ]; then cp -a "$src" "$dest"; echo "$src -> $dest" >> "$manifest";
+  else echo "$src (不存在，跳过)" >> "$manifest"; fi
+}
+copy_one /root/agsbx "$dir/agsbx"
+copy_one /root/websbx "$dir/websbx"
+copy_one /root/bin/agsbx "$dir/agsbx-bin"
+copy_one /root/sbx_update "$dir/sbx_update"
+echo "备份目录：$dir" >> "$manifest"
+`;
+  const r = await hostExec(["bash", "-c", script, "_", dir], {}, 120000);
+  if (r.code !== 0) return { ok: false, dir, manifest: "", error: maskSecrets(r.out + "\n" + r.err).slice(-2000) };
+  const v = await hostExec(["bash", "-c", 'test -s "$1/MANIFEST.txt" && echo OK', "_", dir], {}, 15000);
+  if (v.out.trim() !== "OK") return { ok: false, dir, manifest: "", error: "备份清单 MANIFEST.txt 缺失或为空，备份未落定" };
+  const manifest = (await hostExec(["cat", dir + "/MANIFEST.txt"], {}, 15000)).out;
+  return { ok: true, dir, manifest: maskSecrets(manifest) };
+}
+// 预检：只返回存在性与备份清单，不执行任何删除，也不发确认凭证以外的状态。
+app.post("/api/uninstall/confirm", async (c) => {
+  const probe = await probeUninstallPaths();
+  const installed = probe["/root/agsbx"] || probe["/root/websbx"];
+  const backupItems = [
+    { path: "/root/agsbx", label: "ArgoSBX 配置与数据目录", exists: probe["/root/agsbx"] },
+    { path: "/root/websbx", label: "订阅生成目录", exists: probe["/root/websbx"] },
+    { path: "/root/bin/agsbx", label: "启动脚本 agsbx", exists: probe["/root/bin/agsbx"] },
+    { path: "/root/sbx_update", label: "安装标记 sbx_update", exists: probe["/root/sbx_update"] },
+  ];
+  return c.json({
+    ok: true, installed, confirmToken: newConfirmToken(), backupItems,
+    backupPrefix: UNINSTALL_BACKUP_PREFIX,
+    deletes: ["/root/agsbx（全部配置、节点、订阅文件）", "/root/websbx（订阅生成目录）", "/root/bin/agsbx（启动脚本）", "/root/sbx_update（安装标记）", "xr / sb / argo 三个服务与相关定时任务"],
+    warning: "卸载会删掉全部节点、订阅、配置、服务与定时任务，节点全部失效。执行前先自动备份快照，备份失败不执行；Web 界面、数据库变量组、Cloudflare 侧固定隧道定义不动。",
+  });
+});
+app.post("/api/uninstall", async (c) => {
+  const { confirmToken } = await c.req.json().catch(() => ({} as any));
+  if (!confirmToken || !consumeConfirmToken(confirmToken)) return c.json({ ok: false, error: "确认凭证无效或已过期（10 分钟），请重新走卸载确认流程" }, 400);
+  const safeErr = uninstallSafetyCheck();
+  if (safeErr) return c.json({ ok: false, error: safeErr }, 400);
+  const probe = await probeUninstallPaths();
+  if (!probe["/root/agsbx"] && !probe["/root/websbx"]) return c.json({ ok: false, error: "ArgoSBX 未安装，无需卸载" }, 400);
+  audit("uninstall-start", "卸载 ArgoSBX（del），先备份快照", "running");
+  // 1. 备份快照；失败停手，不执行 del。
+  const snap = await snapshotBeforeUninstall();
+  if (!snap.ok) {
+    audit("uninstall-abort", "备份失败，未执行 del", "failed");
+    return c.json({ ok: false, error: "备份失败，未执行卸载：" + (snap.error || "未知错误"), backupDir: snap.dir }, 500);
+  }
+  // 2. 执行 del（上游脚本自带 cleandel：停并删服务、清 crontab/bashrc、删目录）。
+  // 启动脚本还在就用它；已被人删过则走 beta 脚本直跑 del（del 不受“未安装”门槛限制）。
+  const r = probe["/root/bin/agsbx"]
+    ? await hostExec([AGSBX_BIN, "del"], {}, 300000)
+    : await hostExec(["bash", "-c", `curl -Ls ${BETA_URL} | bash -s del`], {}, 300000);
+  const maskedLog = maskSecrets(r.out + "\n" + r.err).slice(-6000);
+  // 3. 核验：目录与启动脚本已不存在、xr/sb/argo 服务已停、代理进程已无。
+  // 订阅 httpd（busybox）不在硬核验里：cleandel 不保证杀它，目录删掉后它也无内容可 serve。
+  const verify = await hostExec(["bash", "-c", `
+    ok=1
+    [ -e /root/agsbx ] && ok=0
+    [ -e /root/websbx ] && ok=0
+    [ -e /root/bin/agsbx ] && ok=0
+    for u in xr sb argo; do systemctl is-active --quiet "$u" 2>/dev/null && ok=0; done
+    if ps aux | grep -E 'agsbx/(s|x)' | grep -v grep >/dev/null 2>&1; then ok=0; fi
+    echo $ok`], {}, 30000);
+  const verified = verify.out.trim() === "1";
+  const ok = r.code === 0 && verified;
+  audit("uninstall-finish", `备份 ${snap.dir}；code=${r.code}；核验 ${verified ? "通过" : "未通过"}`, ok ? "ok" : "failed");
+  // 数据库变量组刻意不动：重装时用保存的变量组执行一次 rep 即可。
+  return c.json({ ok, code: r.code, log: maskedLog, backupDir: snap.dir, backupManifest: snap.manifest, verified });
+});
 // ---- cert renew (interactive script piped with menu answers; confirm-gated) ----
 app.post("/api/cert/renew", async (c) => {
   const { confirmToken } = await c.req.json().catch(() => ({} as any));
