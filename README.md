@@ -1,34 +1,34 @@
 # argosbx-ui
 
-Web UI for [ArgoSBX](https://github.com/yonggekkk/argosbx). It only manages variables and shows status. Every change applies by re-running the upstream script with `rep`, using the full variable set. Certificates use [acme-yg](https://github.com/yonggekkk/acme-yg).
+[ArgoSBX](https://github.com/yonggekkk/argosbx) 的 Web 管理界面。只管理变量、显示状态；每次改动通过 `rep` 重跑上游脚本、带完整变量组生效。证书用 [acme-yg](https://github.com/yonggekkk/acme-yg)。
 
-## Features
+## 功能
 
-- Server status: tunnel, certificate, subscription, nodes
-- Protocols: grouped by sing-box / Xray / both, toggle on or off; an empty port reuses the old port, or gets a random one on rep
-- Argo tunnel: fixed (domain + token) or temporary; picking an Argo protocol auto-enables it
-- Certificates: built-in self-signed or domain certificate; list, apply, delete
-- Subscriptions: groups, named links, expiry
-- Operations: update Xray / sing-box / cloudflared, restart services, import live variables
-- Safe changes: dry-run diff first, confirm in the UI, auto-backup before rep; UUID and tokens are never changed and are masked in API responses and logs
+- 服务器状态：隧道、证书、订阅、节点
+- 协议：按 sing-box / Xray / 双核分组，开关启用；端口留空沿用旧端口，没有旧端口则 rep 时随机分配
+- Argo 隧道：固定（域名 + token）或临时；选了 Argo 协议会自动启用对应协议
+- 证书：内置自签或域名证书；查看、申请、删除
+- 订阅：分组、命名链接、过期时间
+- 操作：更新 Xray / sing-box / cloudflared、重启服务、从服务器导入变量
+- 安全改动：先干跑看差异，界面确认后执行，rep 前自动备份；UUID 和 token 不会被改动，API 与日志里全部打码
 
-## Requirements
+## 要求
 
-- A Linux server with ArgoSBX installed (x86_64 / ARM)
-- Docker (Docker Compose for the compose method)
-- Upstream beta branch: the first rep upgrades a main-branch install to beta
+- 已装 ArgoSBX 的 Linux 服务器（x86_64 / ARM）
+- Docker（compose 方式需要 Docker Compose）
+- 上游 beta 分支：第一次 rep 会把 main 分支的安装升到 beta
 
 ## Docker
 
-The container needs `--privileged --pid=host` to run the upstream script in the host namespace.
+容器需要 `--privileged --pid=host`，才能在宿主机命名空间里跑上游脚本。
 
-Generate the admin password once (written to `.env`, shown once):
+生成一次管理员密码（写入 `.env`，只显示一次）：
 
 ```bash
 [ -f .env ] || { echo "ADMIN_PASSWORD=$(cat /proc/sys/kernel/random/uuid)" > .env && chmod 600 .env && cat .env; }
 ```
 
-Run the current image:
+运行当前镜像：
 
 ```bash
 docker run -d --name argosbx-web --restart=always \
@@ -44,17 +44,17 @@ docker run -d --name argosbx-web --restart=always \
   hooleeas/argosbx-ui:latest
 ```
 
-Check the service:
+检查服务：
 
 ```bash
 curl http://localhost:3100/api/health
 ```
 
-It should return `{"ok":true,...}`.
+应返回 `{"ok":true,...}`。
 
-Then open `http://<server>:3100` and log in with the admin password.
+然后打开 `http://<server>:3100`，用管理员密码登录。
 
-Docker Compose:
+Docker Compose：
 
 ```yaml
 services:
@@ -78,7 +78,7 @@ services:
       - /root/bin:/root/bin:ro
 ```
 
-To update to the latest image, remove the running container before starting the new one because it uses port `3100`:
+更新到最新镜像前，先删掉正在跑的容器，因为它占着 `3100` 端口：
 
 ```bash
 docker rm -f argosbx-web
@@ -96,23 +96,23 @@ docker run -d --name argosbx-web --restart=always \
   hooleeas/argosbx-ui:latest
 ```
 
-### Recover the admin password
+### 找回管理员密码
 
-The password lives only in `.env` in the deploy directory:
+密码只保存在部署目录的 `.env` 里：
 
 ```sh
 sed -n 's/^ADMIN_PASSWORD=//p' .env
 ```
 
-## Usage
+## 使用
 
-1. On the Operations page, import live variables from the server first.
-2. Edit protocols, tunnel, certificates, or subscriptions, then save to preview the diff (not applied yet).
-3. Confirm on the Operations page to run rep. The subscription drops briefly during rep.
+1. 先在操作页从服务器导入变量。
+2. 改协议、隧道、证书或订阅，保存后先预览差异（还没生效）。
+3. 在操作页确认后执行 rep。rep 期间订阅会短暂中断。
 
-## Notes
+## 注意
 
-- If a domain certificate is in use but the stored choice says otherwise, import asks to fix it, so rep won't switch back to self-signed.
-- With `alns` on but no certificate on the server, rep is refused — apply a certificate first.
-- IP certificates last 3 days only.
-- No one-click delete: upstream `del` removes the whole ArgoSBX and subscription directories.
+- 如果正在用域名证书、但存的选择不对，导入时会提示修正，rep 就不会切回自签。
+- `alns` 开着但服务器上没有证书时，rep 会被拒绝——先申请证书。
+- IP 证书只有 3 天有效期。
+- 没有一键删除：上游的 `del` 会删掉整个 ArgoSBX 和订阅目录。
