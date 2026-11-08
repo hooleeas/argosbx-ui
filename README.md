@@ -18,45 +18,89 @@ argosbx-ui 是 ArgoSBX 的 Web 管理界面。它只负责界面与变量存取�
 - Docker（compose 方式还需要 Docker Compose）
 - 上游脚本使用 beta 分支（提供 VLESS-xhttp-enc 固定隧道等新功能）；如果服务器上是 main 分支安装，首次 rep 会升级到 beta
 
-## 部署
+## Docker
 
-镜像发布在 Docker Hub（`hooleeas/argosbx-ui`），由 GitHub Actions 在每次推送到 main 时自动构建并推送，部署时直接拉取，无需本地构建。把代码放到服务器上，进入目录，任选一种方式一键部署（两者等价，共用同一份 `.env` 与 `./data`）：
+先生成管理员密码（只需一次，密码写入 `.env` 并显示一次，请妥善保存）：
 
-### 方式一：Docker Compose
-
-```sh
-cd argosbx-ui
-./compose.sh
+```bash
+[ -f .env ] || { echo "ADMIN_PASSWORD=$(cat /proc/sys/kernel/random/uuid)" > .env && chmod 600 .env && cat .env; }
 ```
 
-之后日常启停直接用 `docker compose up -d` / `docker compose down`。更新到最新镜像：`docker compose pull && docker compose up -d`。
+Run the current image:
 
-### 方式二：Docker run
-
-```sh
-cd argosbx-ui
-./run.sh
+```bash
+docker run -d --name argosbx-web --restart=always \
+  --privileged --pid=host \
+  -p 3100:3100 \
+  --env-file .env \
+  -e DATA_DIR=/data \
+  -v ./data:/data \
+  -v /root/agsbx:/root/agsbx \
+  -v /root/ygkkkca:/root/ygkkkca:ro \
+  -v /root/websbx:/root/websbx:ro \
+  -v /root/bin:/root/bin:ro \
+  hooleeas/argosbx-ui:latest
 ```
 
-更新到最新镜像：重新运行 `./run.sh`（会自动拉取最新镜像并重建容器）。
+Check the service:
 
-首次运行如果没有管理员密码，部署脚本会随机生成一个 UUID 作为密码，写入 `.env`（仅保存在本机，不进仓库），并在终端显示一次，请妥善保存。
+```bash
+curl http://localhost:3100/api/health
+```
 
-部署完成后打开 `http://<服务器地址>:3100`，用管理员密码登录。
+It should return `{"ok":true,...}`.
 
-> 两种方式不要混用管理同一个容器；切换方式前先停掉旧容器：`docker rm -f argosbx-web`。
+Then open `http://<服务器地址>:3100` and log in with the admin password.
+
+Docker Compose:
+
+```yaml
+services:
+  argosbx-ui:
+    image: hooleeas/argosbx-ui:latest
+    container_name: argosbx-web
+    restart: always
+    privileged: true
+    pid: host
+    ports:
+      - "3100:3100"
+    env_file:
+      - .env
+    environment:
+      - DATA_DIR=/data
+    volumes:
+      - ./data:/data
+      - /root/agsbx:/root/agsbx
+      - /root/ygkkkca:/root/ygkkkca:ro
+      - /root/websbx:/root/websbx:ro
+      - /root/bin:/root/bin:ro
+```
+
+To update to the latest image, remove the running container before starting the new one because it uses port `3100`:
+
+```bash
+docker rm -f argosbx-web
+docker pull hooleeas/argosbx-ui:latest
+docker run -d --name argosbx-web --restart=always \
+  --privileged --pid=host \
+  -p 3100:3100 \
+  --env-file .env \
+  -e DATA_DIR=/data \
+  -v ./data:/data \
+  -v /root/agsbx:/root/agsbx \
+  -v /root/ygkkkca:/root/ygkkkca:ro \
+  -v /root/websbx:/root/websbx:ro \
+  -v /root/bin:/root/bin:ro \
+  hooleeas/argosbx-ui:latest
+```
 
 ### 找回管理员密码
 
-密码只保存在部署目录的 `.env` 文件中，在服务器上、部署目录下执行：
+密码只保存在部署目录的 `.env` 文件中：
 
 ```sh
 sed -n 's/^ADMIN_PASSWORD=//p' .env
 ```
-
-### 容器权限说明
-
-容器以 `--privileged --pid=host` 运行，通过 `nsenter` 回到宿主机命名空间执行 `agsbx list/rep`，这样才能操作宿主机的服务与配置；同时挂载 ArgoSBX 数据目录与证书目录（证书只读）。没有这些权限，rep 与状态读取无法工作。
 
 ## 使用
 
