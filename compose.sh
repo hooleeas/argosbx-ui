@@ -1,5 +1,6 @@
 #!/bin/bash
 # argosbx-ui compose 脚本——docker compose 方式一键部署。
+# 镜像来自 Docker Hub（hooleeas/argosbx-ui），部署时自动拉取，无需本地构建。
 # 在已安装 ArgoSBX 的服务器上运行，与 ./run.sh（docker run 方式）等价，
 # 共用同一份 .env 与 ./data，任选其一即可。
 # 管理员密码只保存在 ./.env（不进仓库）：
@@ -17,7 +18,8 @@ if [ -z "$ADMIN_PASSWORD" ]; then
 fi
 mkdir -p "$PWD/data"
 docker rm -f argosbx-web 2>/dev/null || true
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 docker compose logs --tail 20
 echo
 HOST_IP=$(hostname -I 2>/dev/null | awk '{print $1}')

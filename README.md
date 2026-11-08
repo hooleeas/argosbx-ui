@@ -20,7 +20,7 @@ argosbx-ui 是 ArgoSBX 的 Web 管理界面。它只负责界面与变量存取�
 
 ## 部署
 
-把代码放到服务器上，进入目录，任选一种方式一键部署（两者等价，共用同一份 `.env` 与 `./data`）：
+镜像发布在 Docker Hub（`hooleeas/argosbx-ui`），由 GitHub Actions 在每次推送到 main 时自动构建并推送，部署时直接拉取，无需本地构建。把代码放到服务器上，进入目录，任选一种方式一键部署（两者等价，共用同一份 `.env` 与 `./data`）：
 
 ### 方式一：Docker Compose
 
@@ -29,7 +29,7 @@ cd argosbx-ui
 ./compose.sh
 ```
 
-之后日常启停直接用 `docker compose up -d` / `docker compose down`。
+之后日常启停直接用 `docker compose up -d` / `docker compose down`。更新到最新镜像：`docker compose pull && docker compose up -d`。
 
 ### 方式二：Docker run
 
@@ -37,6 +37,8 @@ cd argosbx-ui
 cd argosbx-ui
 ./run.sh
 ```
+
+更新到最新镜像：重新运行 `./run.sh`（会自动拉取最新镜像并重建容器）。
 
 首次运行如果没有管理员密码，部署脚本会随机生成一个 UUID 作为密码，写入 `.env`（仅保存在本机，不进仓库），并在终端显示一次，请妥善保存。
 

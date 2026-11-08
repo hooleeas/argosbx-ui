@@ -1,7 +1,7 @@
 FROM oven/bun:1-alpine
 RUN apk add --no-cache util-linux curl openssl
 WORKDIR /app
-COPY package.json bun.lockb* ./
+COPY package.json ./
 RUN bun install --production
 COPY src ./src
 COPY public ./public

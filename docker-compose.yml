@@ -1,12 +1,12 @@
 # argosbx-ui — Docker Compose 部署
+# 镜像来自 Docker Hub（hooleeas/argosbx-ui），部署时自动拉取，无需本地构建
 # 一键部署：./compose.sh（首次运行自动生成管理员密码）
 # 之后日常启停：docker compose up -d / docker compose down
 # 与 ./run.sh（docker run 方式）等价，共用同一份 .env 与 ./data，任选其一即可。
 
 services:
   argosbx-ui:
-    build: .
-    image: argosbx-web:0.1.0
+    image: hooleeas/argosbx-ui:latest
     container_name: argosbx-web
     restart: unless-stopped
     privileged: true
