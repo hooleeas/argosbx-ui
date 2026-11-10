@@ -4,15 +4,28 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>argosbx-ui</title>
-<link rel="stylesheet" href="/public/style.css?v=20261108-v21">
+<link rel="stylesheet" href="/public/style.css?v=20261108-v22">
 </head>
 <body>
 <header class="topbar"><div class="topbar-inner"><h1>argosbx-ui</h1><span id="ver"></span><button id="logout" hidden>退出</button></div></header>
-<div id="login" class="card login-card" hidden>
-  <h2>管理员登录</h2>
-  <input id="pw" type="password" placeholder="管理员密码" autocomplete="current-password">
-  <button id="loginBtn" class="primary">登录</button>
-  <p id="loginErr" class="err"></p>
+<div id="login" class="login-screen" hidden>
+  <div class="login-hero">
+    <div class="login-brand">
+      <h1>argosbx-ui</h1>
+      <p class="login-sub">ArgoSBX + acme-yg · Web 管理面板</p>
+    </div>
+    <form id="loginForm" class="card login-card">
+      <h2>管理员登录</h2>
+      <label class="login-label" for="pw">管理员密码</label>
+      <div class="pw-wrap">
+        <input id="pw" type="password" placeholder="输入管理员密码" autocomplete="current-password">
+        <button type="button" id="pwToggle" class="pw-toggle" aria-label="显示密码">显示</button>
+      </div>
+      <button id="loginBtn" class="primary" type="submit">登录</button>
+      <p id="loginErr" class="login-err" role="alert" hidden></p>
+    </form>
+    <p class="login-foot">管理员密码在首次部署时随机生成，详见 README 取回密码的指令。</p>
+  </div>
 </div>
 <main id="app" hidden>
 <nav id="tabs" class="tabbar">
@@ -149,7 +162,7 @@
   <ul id="auditList" class="audit-list"></ul>
 </section>
 </main>
-<script type="module" src="/public/app.js?v=20261108-v21"></script>
+<script type="module" src="/public/app.js?v=20261108-v22"></script>
 <div id="toast" role="status" aria-live="polite"></div>
 <div id="modalOverlay" class="modal-overlay" hidden>
   <div class="modal card" role="dialog" aria-modal="true">

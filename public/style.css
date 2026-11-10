@@ -19,10 +19,36 @@ p{margin:8px 0}
 .topbar-inner #ver{color:#666;font-size:13px}
 .topbar-inner #logout{margin-left:auto}
 
-/* 登录卡片 */
-.login-card{max-width:360px;margin:48px auto;padding:24px}
-.login-card h2{margin-top:0}
-.login-card input{margin-bottom:12px}
+/* 登录页：整屏居中，品牌 + 毛玻璃卡片；登录态顶栏隐藏，登录成功切管理页时顶栏随整页切换出现，不产生页内跳动 */
+body.logged-out .topbar{display:none}
+.login-screen{min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:24px 15px}
+.login-screen[hidden]{display:none}
+.login-hero{width:100%;max-width:400px}
+.login-brand{text-align:center;margin-bottom:24px}
+.login-brand h1{font-size:34px;font-weight:800;letter-spacing:.5px}
+.login-sub{margin:8px 0 0;color:#666;font-size:14px}
+.login-card{margin:0;padding:28px 24px;border-radius:16px;background:rgba(255,255,255,.72);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%)}
+.login-card h2{margin:0 0 4px;font-size:20px;text-align:center}
+.login-label{display:block;margin:16px 0 6px;font-size:13px;font-weight:700;color:#666}
+.pw-wrap{position:relative}
+.pw-wrap input{margin:0;padding-right:64px}
+.pw-wrap input:focus{border-color:#2e7d32;box-shadow:0 0 0 3px rgba(46,125,50,.18)}
+.pw-toggle{position:absolute;right:6px;top:50%;transform:translateY(-50%);height:28px;min-height:0;padding:0 10px;font-size:13px;font-weight:700;color:#2e7d32;background:transparent;border:none;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+.pw-toggle:active{transform:translateY(-50%) scale(.95)}
+.login-card .primary{width:100%;margin-top:16px}
+.login-err{margin:14px 0 0;padding:10px 12px;border:1px solid rgba(198,40,40,.45);border-radius:8px;background:rgba(198,40,40,.08);color:#c62828;font-size:13px}
+.login-err[hidden]{display:none}
+.login-foot{margin:16px 0 0;text-align:center;color:#999;font-size:12px}
+@media (prefers-color-scheme:dark){
+  .login-sub{color:#999}
+  .login-card{background:rgba(30,30,30,.72);border-color:rgba(255,255,255,.14)}
+  .login-label{color:#999}
+  .pw-wrap input:focus{border-color:#66bb6a;box-shadow:0 0 0 3px rgba(102,187,106,.25)}
+  .pw-toggle{color:#66bb6a}
+  .login-err{border-color:rgba(239,83,80,.5);background:rgba(229,57,53,.12);color:#ef5350}
+  .login-foot{color:#888}
+}
+@media (hover:hover){.pw-toggle:hover{background:transparent;border-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}}
 
 /* 导航：粘顶胶囊，一行，手机可横滑 */
 .tabbar{position:sticky;top:54px;z-index:99;display:flex;gap:4px;margin:12px 0 4px;padding:4px;border:1px solid rgba(23,25,28,.14);border-radius:999px;background:rgba(255,255,255,.72);box-shadow:inset 0 1px 0 rgba(23,25,28,.09),0 10px 32px rgba(0,0,0,.12);backdrop-filter:blur(12px) saturate(180%);-webkit-backdrop-filter:blur(12px) saturate(180%);overflow-x:auto;scrollbar-width:none}
@@ -138,6 +164,10 @@ label{display:block;margin:10px 0}
 
 @media (max-width:600px){
   input,select{font-size:16px}
+  .login-brand h1{font-size:28px}
+  .login-brand{margin-bottom:20px}
+  .login-card{padding:24px 20px}
+  .login-screen{padding:16px}
   .status-cards{grid-template-columns:1fr}
   .proto-row{flex-wrap:wrap}
   .proto-row .proto-name{flex:1 1 100%;order:-1;margin-bottom:2px}

@@ -26,8 +26,8 @@ async function api(path, opts = {}) {
   if (!r.ok) throw new Error(j.error || ("HTTP " + r.status));
   return j;
 }
-function showLogin() { $("login").hidden = false; $("app").hidden = true; $("logout").hidden = true; }
-function showApp() { $("login").hidden = true; $("app").hidden = false; $("logout").hidden = false; }
+function showLogin() { document.body.classList.add("logged-out"); $("login").hidden = false; $("app").hidden = true; $("logout").hidden = true; }
+function showApp() { document.body.classList.remove("logged-out"); $("login").hidden = true; $("app").hidden = false; $("logout").hidden = false; }
 // 无需确认的提示：点保存/导入后告诉用户点了没，几秒后自己消失，不用点确定。
 let toastTimer = null;
 function showToast(msg, isErr) {
@@ -414,9 +414,21 @@ document.querySelectorAll("#tabs button").forEach((b) => b.onclick = () => {
   document.querySelectorAll(".tab").forEach((x) => x.classList.remove("on"));
   b.classList.add("on"); $("tab-" + b.dataset.tab).classList.add("on");
 });
-$("loginBtn").onclick = async () => {
+// 登录表单提交（回车 / 移动端键盘确认键都能提交）：请求、成功、失败路径与原来按钮点击完全一致。
+$("loginForm").addEventListener("submit", async (ev) => {
+  ev.preventDefault();
+  $("loginErr").hidden = true; $("loginErr").textContent = "";
   try { await api("/api/login", { method: "POST", body: JSON.stringify({ password: $("pw").value }) }); showApp(); await loadAll(); }
-  catch (e) { $("loginErr").textContent = e.message; }
+  catch (e) { $("loginErr").textContent = e.message; $("loginErr").hidden = false; }
+});
+// 密码可见 / 隐藏切换：只改输入框 type 与按钮文字，不碰登录逻辑。
+$("pwToggle").onclick = () => {
+  const pw = $("pw");
+  const show = pw.type === "password";
+  pw.type = show ? "text" : "password";
+  $("pwToggle").textContent = show ? "隐藏" : "显示";
+  $("pwToggle").setAttribute("aria-label", show ? "隐藏密码" : "显示密码");
+  pw.focus();
 };
 $("logout").onclick = async () => { await api("/api/logout", { method: "POST", body: "{}" }); showLogin(); };
 const IMPORT_LABELS = { uuid: "UUID", agk: "隧道 token", agn: "隧道域名", argo: "Argo 主协议", alns: "证书选择", name: "节点名前缀", oap: "开放所有端口", reym: "Reality 域名", sub: "订阅", subid: "订阅路径", subpt: "订阅端口", vlpt: "VLESS Reality-Vision", vmpt: "VMess-ws", vwpt: "VLESS-ws", vxpt: "VLESS-xhttp-enc", xhpt: "VLESS xhttp-reality", xupt: "VLESS xhttp-tls-UDP", xcpt: "VLESS xhttp-tls-TCP/UDP", hypt: "Hysteria2", tupt: "TUIC5", anpt: "AnyTLS", arpt: "Any-Reality", sspt: "Shadowsocks 2022", sopt: "Socks5", nvpt: "NaiveProxy" };
