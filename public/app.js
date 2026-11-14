@@ -449,7 +449,7 @@ $("modalOverlay").addEventListener("click", (e) => { if (e.target === $("modalOv
 // ---- 卸载 ArgoSBX：弹窗双重确认 ----
 // 第一步：列清删什么、备份什么；第二步：输入「卸载」二字才放行红色确认按钮。
 // 备份清单由服务端预检返回（实际存在才写“会备份”，不存在的写“不存在，跳过”）。
-const UNINSTALL_DELETES = ["全部节点与订阅链接（/root/agsbx/jhsub.txt 等）", "全部协议配置（/root/agsbx/xr.json、sb.json）", "订阅生成目录 /root/websbx", "启动脚本 /root/bin/agsbx 与安装标记 sbx_update", "xr / sb / argo 三个服务与相关定时任务"];
+const UNINSTALL_DELETES = ["全部节点与订阅链接（/root/agsbx/jhsub.txt 等）", "全部协议配置（/root/agsbx/xr.json、sb.json）", "订阅生成目录 /root/websbx", "启动脚本 /root/bin/agsbx 与安装标记 sbx_update", "xr / sb / argo 三个服务与相关定时任务", "密码快捷脚本 /usr/local/bin/sbpass（部署时装的）"];
 async function startUninstall() {
   try {
     const pre = await api("/api/uninstall/confirm", { method: "POST", body: "{}" });

@@ -842,14 +842,17 @@ app.post("/api/uninstall", async (c) => {
   const r = probe["/root/bin/agsbx"]
     ? await hostExec([AGSBX_BIN, "del"], {}, 300000)
     : await hostExec(["bash", "-c", `curl -Ls ${BETA_URL} | bash -s del`], {}, 300000);
+  // 2b. 卸载干净：部署时装的 sbpass 也一并删掉（它是 argosbx-ui 的配套脚本）。
+  await hostExec(["rm", "-f", "/usr/local/bin/sbpass"], {}, 15000);
   const maskedLog = maskSecrets(r.out + "\n" + r.err).slice(-6000);
-  // 3. 核验：目录与启动脚本已不存在、xr/sb/argo 服务已停、代理进程已无。
+  // 3. 核验：目录与启动脚本已不存在、xr/sb/argo 服务已停、代理进程已无、sbpass 已删。
   // 订阅 httpd（busybox）不在硬核验里：cleandel 不保证杀它，目录删掉后它也无内容可 serve。
   const verify = await hostExec(["bash", "-c", `
     ok=1
     [ -e /root/agsbx ] && ok=0
     [ -e /root/websbx ] && ok=0
     [ -e /root/bin/agsbx ] && ok=0
+    [ -e /usr/local/bin/sbpass ] && ok=0
     for u in xr sb argo; do systemctl is-active --quiet "$u" 2>/dev/null && ok=0; done
     if ps aux | grep -E 'agsbx/(s|x)' | grep -v grep >/dev/null 2>&1; then ok=0; fi
     echo $ok`], {}, 30000);
