@@ -98,7 +98,7 @@ docker run -d --name argosbx-web --restart=always \
 
 ### 找回管理员密码
 
-密码只保存在部署目录的 `.env` 里。SSH 进 VPS 后直接输 `sbpass`（项目根目录有这个脚本，没装就先 `cp sbpass /usr/local/bin/sbpass && chmod +x /usr/local/bin/sbpass`）：
+密码只保存在部署目录的 `.env` 里。部署脚本（`run.sh` / `compose.sh`）会自动把项目里的 `sbpass` 装到 `/usr/local/bin/sbpass`，SSH 进 VPS 后直接输 `sbpass` 就显示密码（没有 `.env` 时先生成一个）：
 
 ```sh
 sbpass

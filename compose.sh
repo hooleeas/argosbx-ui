@@ -7,6 +7,8 @@
 # 首次运行没有密码时自动生成一个随机 UUID 密码，写入 .env（600）并只显示一次。
 set -e
 cd "$(dirname "$0")"
+# 部署自带 sbpass：装到 /usr/local/bin，SSH 进来输 sbpass 就显示管理员密码
+if [ -f ./sbpass ]; then cp ./sbpass /usr/local/bin/sbpass && chmod +x /usr/local/bin/sbpass; fi
 if [ -f .env ]; then set -a; . ./.env; set +a; fi
 if [ -z "$ADMIN_PASSWORD" ]; then
   ADMIN_PASSWORD=$(cat /proc/sys/kernel/random/uuid)
