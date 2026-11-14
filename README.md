@@ -22,10 +22,10 @@
 
 容器需要 `--privileged --pid=host`，才能在宿主机命名空间里跑上游脚本。
 
-生成一次管理员密码（写入 `.env`，只显示一次）：
+生成一次管理员密码（写入 `.env`，只显示一次；也可以直接用项目里的 `sbpass` 脚本）：
 
 ```bash
-[ -f .env ] || { echo "ADMIN_PASSWORD=$(cat /proc/sys/kernel/random/uuid)" > .env && chmod 600 .env && cat .env; }
+cp sbpass /usr/local/bin/sbpass && chmod +x /usr/local/bin/sbpass && sbpass
 ```
 
 运行当前镜像：
@@ -98,7 +98,13 @@ docker run -d --name argosbx-web --restart=always \
 
 ### 找回管理员密码
 
-密码只保存在部署目录的 `.env` 里：
+密码只保存在部署目录的 `.env` 里。SSH 进 VPS 后直接输 `sbpass`（项目根目录有这个脚本，没装就先 `cp sbpass /usr/local/bin/sbpass && chmod +x /usr/local/bin/sbpass`）：
+
+```sh
+sbpass
+```
+
+没装 `sbpass` 时也可以直接读：
 
 ```sh
 sed -n 's/^ADMIN_PASSWORD=//p' .env
