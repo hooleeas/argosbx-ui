@@ -22,12 +22,6 @@
 
 容器需要 `--privileged --pid=host`，才能在宿主机命名空间里跑上游脚本。
 
-生成一次管理员密码（写入 `.env`，只显示一次；也可以直接用项目里的 `sbpass` 脚本）：
-
-```bash
-cp sbpass /usr/local/bin/sbpass && chmod +x /usr/local/bin/sbpass && sbpass
-```
-
 运行当前镜像：
 
 ```bash
