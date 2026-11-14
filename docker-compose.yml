@@ -1,0 +1,19 @@
+services:
+  argosbx-ui:
+    image: hooleeas/argosbx-ui:latest
+    container_name: argosbx-ui
+    restart: always
+    privileged: true
+    pid: host
+    ports:
+      - "3100:3100"
+    env_file:
+      - .env
+    environment:
+      - DATA_DIR=/data
+    volumes:
+      - ./data:/data
+      - /root/agsbx:/root/agsbx
+      - /root/ygkkkca:/root/ygkkkca:ro
+      - /root/websbx:/root/websbx:ro
+      - /root/bin:/root/bin:ro

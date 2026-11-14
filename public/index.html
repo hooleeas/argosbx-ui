@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>argosbx-ui</title>
+<link rel="stylesheet" href="/public/style.css?v=20261114-v34">
+</head>
+<body>
+<header class="topbar"><div class="topbar-inner"><h1>argosbx-ui</h1><span id="ver"></span><button id="repBtn" class="primary" title="按当前表单值执行 rep（生效）">执行 rep</button></div></header>
+<div id="login" class="login-screen" hidden>
+  <div class="login-hero">
+    <div class="login-brand">
+      <h1>argosbx-ui</h1>
+      <p class="login-sub">ArgoSBX + acme-yg · Web 管理面板</p>
+    </div>
+    <form id="loginForm" class="card login-card">
+      <h2>管理员登录</h2>
+      <label class="login-label" for="pw">管理员密码</label>
+      <div class="pw-wrap">
+        <input id="pw" type="password" placeholder="输入管理员密码" autocomplete="current-password">
+        <button type="button" id="pwToggle" class="pw-toggle" aria-label="显示密码">显示</button>
+      </div>
+      <button id="loginBtn" class="primary" type="submit">登录</button>
+      <p id="loginErr" class="login-err" role="alert" hidden></p>
+    </form>
+    <p class="login-foot">管理员密码在首次部署时随机生成，详见 README 取回密码的指令。</p>
+  </div>
+</div>
+<main id="app" hidden>
+<nav id="tabs" class="tabbar">
+  <button data-tab="server" class="on">服务器</button>
+  <button data-tab="proto">协议与隧道</button>
+  <button data-tab="cert">证书</button>
+  <button data-tab="ops">操作</button>
+</nav>
+
+<section id="tab-server" class="tab on">
+  <h2>服务器 · JP</h2>
+  <div id="statusCards" class="status-cards"></div>
+  <div class="card">
+    <div id="serverInfo">加载中…</div>
+  </div>
+  <div class="row">
+    <button id="importBtn">从 JP 现状导入变量到数据库</button>
+  </div>
+  <div id="importResult"></div>
+  <p class="hint">导入先比对数据库与 JP 现状：空字段直接补；已有值和现状不一致的列出来，你确认后才覆盖。UUID、隧道 token 只显示打码形式。</p>
+  <h3>节点（<span id="nodeCount">0</span> 条）</h3>
+  <ul id="nodeList" class="node-list"></ul>
+</section>
+
+<section id="tab-proto" class="tab">
+  <h2>协议与隧道</h2>
+  <p class="hint">打头：AnyTLS / Tuic / Hysteria2。端口留空 = 沿用 JP 现有端口，不随机改。拉杆关掉 = rep 时不启用该协议。点「随机」给对应协议填一个不冲突的随机端口。</p>
+  <div class="cfg-grid">
+    <div class="card cfg-cell"><h3 class="proto-group">Xray</h3><div id="protoXray"></div></div>
+    <div class="card cfg-cell"><h3 class="proto-group">sing-box</h3><div id="protoSb"></div></div>
+    <div class="card cfg-cell"><h3 class="proto-group">自动（已选Xray则用Xray，否则Singbox）</h3><div id="protoDual"></div></div>
+    <div class="card cfg-cell form-card">
+      <h3 class="proto-group">隧道</h3>
+      <label>Argo 主协议 <select id="f-argo"><option value="">关闭隧道</option><option value="vmpt">vmpt · VMess-ws</option><option value="vwpt">vwpt · VLESS-ws-enc</option><option value="vxpt">vxpt · VLESS-xhttp-enc（仅 beta）</option></select></label>
+      <p id="argoHint" class="hint ok" hidden></p>
+      <p class="hint">隧道在用的协议会被锁定、不可关闭；要关它，先把这里切到别的协议或选「关闭隧道」。</p>
+      <label>固定隧道域名 <input id="f-agn" placeholder="argo-jp.hooleeas.com"></label>
+      <label>固定隧道 Token <input id="f-agk" type="text" placeholder="留空为临时隧道" autocomplete="off"></label>
+      <label>传输模式 <select id="f-agqc"><option value="">TCP（http2，默认）</option><option value="y">UDP（quic）</option></select></label>
+      <p class="hint">域名和 token 必须同时填才是固定隧道，只填一个会变临时隧道。token 在界面上永远打码显示。</p>
+    </div>
+    <div class="card cfg-cell form-card">
+      <h3 class="proto-group">其他</h3>
+      <label>UUID 密码（节点）
+        <span class="uuid-row"><input id="f-uuid" autocomplete="off"><button id="genUuidBtn" type="button">生成 UUID</button></span>
+      </label>
+      <label>节点名前缀 <input id="f-name" placeholder="Fam"></label>
+      <label>Reality 域名 <input id="f-reym" placeholder="apple.com"></label>
+      <label>CDN 优选 IP（两个，空格分隔） <input id="f-cfip" placeholder="留空默认"></label>
+      <label>CF 解析 IP 的域名 <input id="f-cdnym" placeholder="留空默认"></label>
+      <label>WARP 出站 <input id="f-warp" placeholder="留空默认直连"></label>
+      <label>IP 偏好 <select id="f-ippz"><option value="">自动</option><option value="4">仅 IPv4</option><option value="6">仅 IPv6</option></select></label>
+      <label>Hy2 跳转端口（空格分隔） <input id="f-hyjpt" placeholder="留空不做"></label>
+      <div class="proto-row"><label class="switch-wrap"><input type="checkbox" id="f-oap"><span class="slider"></span></label><label class="proto-name" for="f-oap">开放所有端口</label>
+      <span class="proto-state" id="st-oap">未启用</span><span class="hint oap-hint">开着：rep 时放行全部端口；关着：不动防火墙。</span></div>
+    </div>
+    <div class="card cfg-cell form-card">
+      <h3 class="proto-group">订阅</h3>
+      <label class="check-line"><input type="checkbox" id="f-sub"> 启用本地订阅服务（sub）</label>
+      <label>订阅 Token <input id="f-subid" placeholder="留空 = UUID"></label>
+      <label>订阅端口 <input id="f-subpt" placeholder="留空沿用旧端口"></label>
+      <div class="card"><div id="subInfo">加载中…</div></div>
+    </div>
+  </div>
+</section>
+
+<section id="tab-cert" class="tab">
+  <h2>证书</h2>
+  <div id="certBanner"></div>
+  <div class="card"><div id="certInfo">加载中…</div></div>
+  <div class="card form-card">
+    <div class="cert-choice" id="certChoice">
+      <label class="cert-option" data-cert="builtin"><input type="radio" name="certChoice" value="builtin"><span class="cert-opt-text"><span class="t">内置证书（自签）</span><span class="d">ArgoSBX 内置自签证书，签发者 CN=www.bing.com，有效期 100 年，路径 /root/agsbx/cert.crt，不用办证。</span></span><span class="picked" hidden>✓ 已选</span></label>
+      <label class="cert-option" data-cert="own"><input type="radio" name="certChoice" value="own"><span class="cert-opt-text"><span class="t">域名证书（acme-yg）</span><span class="d">用 acme-yg 办的域名证书，Let's Encrypt 颁发，存在 /root/ygkkkca/，多个脚本共用。</span></span><span class="picked" hidden>✓ 已选</span></label>
+    </div>
+    <p class="hint">acme-yg 三种方式：① 80 端口 IP 证书（只有 3 天，会强制释放 80 端口）② 80 端口域名证书（仅单域名）③ DNS API（单/泛域名，不占 80 端口）。alns 已开但无证书时 rep 会挂在交互等待上。</p>
+  </div>
+  <div class="card">
+    <h3>证书列表（acme-yg 查询）</h3>
+    <div id="certList">加载中…</div>
+    <div class="row"><button id="certListRefreshBtn">刷新列表</button></div>
+    <p class="hint">只读查询，来源是 JP 上 ~/.acme.sh 的实际记录。acme-yg 本版没有“删除指定证书”功能（上游代码已注释），删除只能是下面“删除全部证书并卸载 acme.sh”。</p>
+  </div>
+  <div class="card form-card">
+    <h3>申请新证书</h3>
+    <label>申请方式 <select id="applyMode">
+      <option value="ip">80 端口 IP 证书（无需域名，只有 3 天）</option>
+      <option value="domain">80 端口域名证书（仅单域名）</option>
+      <option value="dns">DNS API 域名证书（单 / 泛域名，不占 80 端口）</option>
+    </select></label>
+    <div id="applyFields"></div>
+    <p id="applyWarn" class="hint warn"></p>
+    <div class="row"><button id="applyBtn" class="primary">申请新证书</button></div>
+    <div id="applyJob" hidden><p id="applyStatus"></p><pre id="applyLog" class="log"></pre></div>
+  </div>
+  <div class="card danger-card">
+    <h3>删除证书</h3>
+    <p class="hint">删除全部证书并卸载 acme.sh：删掉 /root/ygkkkca、~/.acme.sh，清除自动续期 cron。删完没有证书可用，证书选择会自动切回「内置证书（自签）」，须重新 rep 才生效。正在用域名证书（alns 已开）时，删完会回落到内置自签。</p>
+    <div class="row"><button id="certDeleteBtn" class="danger">删除证书并卸载 acme.sh</button></div>
+    <div id="certDeleteStatus"></div>
+  </div>
+  <div class="row">
+    <button id="renewBtn">手动续期全部证书</button>
+  </div>
+  <p class="hint">续期后代理进程是否重载新证书未确认。</p>
+</section>
+
+<section id="tab-ops" class="tab">
+  <h2>操作</h2>
+  <div class="row btn-grid">
+    <button id="listBtn" title="list（只读）">刷新节点</button>
+    <button id="upxBtn" title="upx">更新 Xray 内核</button>
+    <button id="upsBtn" title="ups">更新 sing-box 内核</button>
+    <button id="upaBtn" title="upa（仅 beta）">更新 cloudflared</button>
+    <button id="resBtn" title="res">重启全部服务</button>
+    <button id="exportBtn" title="按当前数据库变量组导出可直接跑的 rep 脚本">导出脚本</button>
+  </div>
+  <p class="hint">upx/ups/upa/res 会杀进程、服务短暂中断，点后需二次确认。卸载在下方危险区，双重确认（弹窗 + 输入「卸载」）后执行，执行前先备份快照。</p>
+  <div class="card danger-card">
+    <h3>卸载 ArgoSBX</h3>
+    <p class="hint">卸载会删掉全部节点、订阅、配置、服务与定时任务（/root/agsbx、/root/websbx、启动脚本、安装标记）。卸载前先自动备份快照到宿主 /tmp/backup-argosbx-uninstall-&lt;时间戳&gt;/（含配置目录、订阅目录、启动脚本、安装标记），备份失败不执行卸载。Web 界面、数据库变量组、Cloudflare 侧固定隧道定义不动。</p>
+    <p class="hint">重装：在操作页用保存的变量组执行一次 rep 即可（变量组已保留在数据库里）。</p>
+    <div class="row"><button id="uninstallBtn" class="danger">卸载 ArgoSBX</button></div>
+    <div id="uninstallStatus"></div>
+  </div>
+  <p class="hint">改完直接点右上角「执行 rep」生效（不经过保存预览）。</p>
+  <h3>执行日志</h3>
+  <pre id="logBox" class="log"></pre>
+  <h3>审计记录</h3>
+  <ul id="auditList" class="audit-list"></ul>
+</section>
+</main>
+<script type="module" src="/public/app.js?v=20261114-v34"></script>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="modalOverlay" class="modal-overlay" hidden>
+  <div class="modal card" role="dialog" aria-modal="true">
+    <h3 id="modalTitle"></h3>
+    <div id="modalBody"></div>
+    <div class="row modal-actions">
+      <button id="modalCancel">取消</button>
+      <button id="modalOk" class="primary">下一步</button>
+    </div>
+  </div>
+</div>
+</body>
+</html>
